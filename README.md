@@ -2,6 +2,8 @@
 
 A proximity voice chat plugin for Omegga.
 
+After installing, users can connect to your server by going to `https://&lt;your ip&gt;:&lt;port&gt;`. By default, the port is 7778.
+
 ## Usage
 
 Install with `omegga install gh:voximity/voice`.
