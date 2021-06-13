@@ -1,0 +1,22 @@
+{
+  "name": "omegga-voice",
+  "version": "0.0.1",
+  "description": "Voice chat plugin for Omegga",
+  "main": "omegga.plugin.js",
+  "scripts": {
+    "test": "omegga"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voximity/omegga-voice.git"
+  },
+  "author": "voximity",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "hasbin": "^1.2.3",
+    "peer": "^0.6.1",
+    "pem": "^1.14.4",
+    "socket.io": "^4.1.2"
+  }
+}

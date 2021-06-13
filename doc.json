@@ -1,0 +1,42 @@
+{
+  "name": "Voice",
+  "author": "x",
+  "description": "Browser-based voice chat using WebRTC. Inspired by cake's voice chat for his gamemode 2raab.",
+  "config": {
+    "port": {
+      "description": "The port the web server will run on.",
+      "default": 7778,
+      "type": "number"
+    },
+    "proximity": {
+      "description": "Whether or not to use proximity voice chat. People closer will sound louder.",
+      "default": true,
+      "type": "boolean"
+    },
+    "panning": {
+      "description": "Whether or not audio should be spatialized so that voices from the left should be heard through only the left ear, and vice versa.",
+      "default": true,
+      "type": "boolean"
+    },
+    "max-distance": {
+      "description": "The maximum distance away that a voice can be heard from an observer, in studs.",
+      "default": 20,
+      "type": "number"
+    },
+    "falloff-factor": {
+      "description": "How much the voice volume should fall off over a distance as it reaches the maximum distance. Greater values mean that the voice will fall off more extremely at lower distances, creating an inverse square-ish curve.",
+      "default": 2,
+      "type": "number"
+    }
+  },
+  "commands": [
+    {
+      "name": "/auth",
+      "description": "Links your in-game user with the website.",
+      "example": "/auth abc123",
+      "args": [
+        {"name": "code", "description": "The randomly generated code.", "required": true}
+      ]
+    }
+  ]
+}
