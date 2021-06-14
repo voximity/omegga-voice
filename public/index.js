@@ -12,6 +12,8 @@ let maxVoiceDistance = 100;
 let falloffFactor = 2;
 let deadVoice = true;
 let useTTS = false;
+let showChat = true;
+let chatTTS = false;
 
 function setNetConfig(config) {
   maxVoiceDistance = config.maxVoiceDistance;
@@ -21,6 +23,8 @@ function setNetConfig(config) {
   deadVoice = config.deadVoice;
   mapScale = config.mapScale;
   useTTS = config.useTTS;
+  showChat = config.showChat;
+  chatTTS = config.chatTTS;
 }
 
 async function getUserMedia() {
@@ -31,13 +35,20 @@ async function getUserMedia() {
   }
 }
 
-function tts(text) {
+function tts(text, optionMap) {
   if (!useTTS) return;
 
   const msg = new SpeechSynthesisUtterance();
   msg.text = text;
   msg.volume = 0.5;
+  for (const option in optionMap) {
+    msg[option] = optionMap[option];
+  }
+
   window.speechSynthesis.speak(msg);
+
+  const timeout = setTimeout(() => window.speechSynthesis.cancel(), 5000);
+  msg.addEventListener("end", () => clearTimeout(timeout));
 }
 
 peer.on("open", (id) => {
@@ -178,6 +189,26 @@ socket.on("peer leave", async ({name, peerId}) => {
 
   console.log("call closed with " + name);
   delete peers[peerId];
+});
+
+// when a message is sent, show it or utter it if settings apply
+socket.on("chat", async ({name, message}) => {
+  if (showChat)
+    addNoto(`<b>${name}:</b> ${message}`);
+  
+  if (chatTTS) {
+    let rate = 1;
+
+    if (message.startsWith("fast:")) {
+      rate = 1.4;
+      message = message.substring(5);
+    } else if (message.startsWith("slow:")) {
+      rate = 0.35;
+      message = message.substring(5);
+    }
+
+    tts(`${name} says ${message}`, {volume: 0.5, rate});
+  }
 });
 
 // when we want to leave, disconnect

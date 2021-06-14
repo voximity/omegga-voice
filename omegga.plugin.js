@@ -70,7 +70,9 @@ module.exports = class VoicePlugin {
       usePanning: this.config["panning"],
       deadVoice: this.config["voice-when-dead"],
       mapScale: this.config["map-scale"],
-      useTTS: this.config["tts"]
+      useTTS: this.config["tts"],
+      showChat: this.config["show-chat"],
+      chatTTS: this.config["tts-chat"]
     };
   }
 
@@ -142,6 +144,7 @@ module.exports = class VoicePlugin {
         // remove this socket from the players array
         for (let i = this.players.length - 1; i >= 0; i--) {
           if (this.players[i].socket == socket) {
+            this.omegga.broadcast(`<color="ff0"><b>${this.players[i].user}</></> left the voice chat.`);
             this.io.emit("peer leave", {name: this.players[i].user, peerId: this.players[i].peerId});
             this.players.splice(i, 1);
           }
@@ -163,6 +166,7 @@ module.exports = class VoicePlugin {
     this.omegga.on("leave", async (player) => {
       for (let i = this.players.length - 1; i >= 0; i--) {
         if (this.players[i].user == player.name) {
+          this.omegga.broadcast(`<color="ff0"><b>${player.name}</></> left the voice chat.`);
           this.players[i].socket.emit("bye");
           this.io.emit("peer leave", {name: player.name, peerId: this.players[i].peerId});
           this.players.splice(i, 1);
@@ -176,7 +180,7 @@ module.exports = class VoicePlugin {
           // found a working player code, attach it
           player.user = user;
           this.omegga.whisper(user, "<color=\"ff0\">Authentication successful.</>");
-          this.omegga.broadcast(`<color="ff0">${user}</> has connected to voice chat.`);
+          this.omegga.broadcast(`<color="ff0"><b>${user}</></> joined the voice chat.`);
 
           // inform our socket
           player.socket.emit("authenticated", user);
@@ -189,6 +193,12 @@ module.exports = class VoicePlugin {
       }
 
       this.omegga.whisper(user, "<color=\"f00\">Invalid authentication code.</>");
+    });
+
+    this.omegga.on("chat", async (name, message) => {
+      if (this.config["show-chat"] || this.config["tts-chat"]) {
+        this.io.emit("chat", {name, message});
+      }
     });
 
     return {registeredCommands: ["auth"]};

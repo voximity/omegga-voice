@@ -47,6 +47,16 @@
       "description": "Whether or not to use TTS to utter notifications on the website.",
       "default": false,
       "type": "boolean"
+    },
+    "show-chat": {
+      "description": "Whether or not to show chat messages on the website.",
+      "default": true,
+      "type": "boolean"
+    },
+    "tts-chat": {
+      "description": "Whether or not to utter chat messages on the website. TTS must be enabled for this setting to work.",
+      "default": false,
+      "type": "boolean"
     }
   },
   "commands": [
