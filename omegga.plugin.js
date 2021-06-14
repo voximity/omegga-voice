@@ -146,6 +146,7 @@ module.exports = class VoicePlugin {
         // remove this socket from the players array
         for (let i = this.players.length - 1; i >= 0; i--) {
           if (this.players[i].socket == socket) {
+            if (this.players[i].user != null) this.omegga.broadcast(`<color="ff0"><b>${this.players[i].user}</></> left the voice chat.`);
             this.io.emit("peer leave", {name: this.players[i].user, peerId: this.players[i].peerId});
             this.players.splice(i, 1);
           }
