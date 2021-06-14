@@ -22,4 +22,7 @@ Omegga's config.
 ## Credits
 
 voximity - creator, maintainer
+
 [Meshiest](https://github.com/Meshiest) - Omegga, initial version of this project
+
+Kodi022 - testing
