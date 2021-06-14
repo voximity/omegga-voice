@@ -69,7 +69,8 @@ module.exports = class VoicePlugin {
       useProximity: this.config["proximity"],
       usePanning: this.config["panning"],
       deadVoice: this.config["voice-when-dead"],
-      mapScale: this.config["map-scale"]
+      mapScale: this.config["map-scale"],
+      useTTS: this.config["tts"]
     };
   }
 

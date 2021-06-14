@@ -82,10 +82,13 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  height: 300px; /* match the canvas size */
 }
 
 .noto {
-  margin: 4px 0;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  margin-right: 6px;
   padding: 6px 10px;
   border-radius: 8px;
   border: 2px solid #aaa;

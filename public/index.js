@@ -11,6 +11,7 @@ let usePanning = true;
 let maxVoiceDistance = 100;
 let falloffFactor = 2;
 let deadVoice = true;
+let useTTS = false;
 
 function setNetConfig(config) {
   maxVoiceDistance = config.maxVoiceDistance;
@@ -19,6 +20,7 @@ function setNetConfig(config) {
   usePanning = config.usePanning;
   deadVoice = config.deadVoice;
   mapScale = config.mapScale;
+  useTTS = config.useTTS;
 }
 
 async function getUserMedia() {
@@ -27,6 +29,15 @@ async function getUserMedia() {
   } catch (e) {
     return null;
   }
+}
+
+function tts(text) {
+  if (!useTTS) return;
+
+  const msg = new SpeechSynthesisUtterance();
+  msg.text = text;
+  msg.volume = 0.5;
+  window.speechSynthesis.speak(msg);
 }
 
 peer.on("open", (id) => {
@@ -98,6 +109,7 @@ socket.on("authenticated", async (user) => {
 
   // and add a notification.
   addNoto("Connected to voice chat.");
+  tts("connected to voice chat.");
 
   authed = true;
   me = user;
@@ -141,6 +153,7 @@ socket.on("peer join", async ({name, peerId}) => {
 
   // add a noto
   addNoto(`<b>${name}</b> joined the voice chat.`, "noto-yellow");
+  tts(`${name} joined the voice chat.`);
 
   console.log("calling " + name + " (peer ID " + peerId + ")");
   const mediaStream = await getUserMedia();
@@ -161,6 +174,7 @@ socket.on("peer leave", async ({name, peerId}) => {
   if (peers[peerId] == null) return;
 
   addNoto(`<b>${name}</b> left the voice chat.`);
+  tts(`${name} left the voice chat.`);
 
   console.log("call closed with " + name);
   delete peers[peerId];
