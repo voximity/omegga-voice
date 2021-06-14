@@ -14,6 +14,8 @@ let deadVoice = true;
 let useTTS = false;
 let showChat = true;
 let chatTTS = false;
+let othersOnMinimap = true;
+let deadNonProximity = true;
 
 function setNetConfig(config) {
   maxVoiceDistance = config.maxVoiceDistance;
@@ -25,6 +27,8 @@ function setNetConfig(config) {
   useTTS = config.useTTS;
   showChat = config.showChat;
   chatTTS = config.chatTTS;
+  othersOnMinimap = config.othersOnMinimap;
+  deadNonProximity = config.deadNonProximity;
 }
 
 async function getUserMedia() {
@@ -101,7 +105,7 @@ function addNoto(innerHTML, notoClass) {
 
 socket.on("authenticated", async (user) => {
   document.getElementsByClassName("auth-code")[0].remove();
-  document.getElementById("desc").innerHTML = `You are logged in as <b>${user}</b>.`;
+  document.getElementById("desc").innerHTML = `You are logged in as <b>${user}</b>. Running into any issues? Check the <a href="/faq.html" target="_blank">FAQ</a>.`;
 
   // create the container
   const container = document.createElement("div");
@@ -286,20 +290,32 @@ socket.on("transforms", (transforms) => {
     const pX = diffY * mapScale + 150;
     const pY = -diffX * mapScale + 150;
 
-    ctx.fillText(transform.name, pX, pY + 4);
+    if (othersOnMinimap || transform == myTransform) {
+      ctx.fillText(transform.name, pX, pY + 4);
 
-    // draw their look vector
-    const yaw = transform.yaw * Math.PI / 180;
-    const yawsin = Math.sin(yaw);
-    const yawcos = Math.cos(yaw);
-    ctx.beginPath();
-    ctx.moveTo(pX + yawsin * 5, pY - yawcos * 5);
-    ctx.lineTo(pX + yawsin * 20, pY - yawcos * 20);
-    ctx.stroke();
+      // draw their look vector
+      const yaw = transform.yaw * Math.PI / 180;
+      const yawsin = Math.sin(yaw);
+      const yawcos = Math.cos(yaw);
+      ctx.beginPath();
+      ctx.moveTo(pX + yawsin * 5, pY - yawcos * 5);
+      ctx.lineTo(pX + yawsin * 20, pY - yawcos * 20);
+      ctx.stroke();
+    }
 
     // if they have a peer id, set their sound accordingly
     if (transform.peerId && peerAudio) {
       const theta = Math.atan2(-diffX, diffY) - (myTransform.yaw * Math.PI / 180);
+
+      if (!deadVoice && deadNonProximity && transform.isDead && myTransform.isDead) {
+        // voice on death is disabled
+        // dead players can talk globally
+        // the player is dead
+        // so is the listener
+        peerAudio.leftGain.gain.value = 1;
+        peerAudio.rightGain.gain.value = 1;
+        continue;
+      }
 
       if (!deadVoice && transform.isDead) {
         // this person is dead, don't transmit their voice

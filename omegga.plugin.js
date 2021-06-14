@@ -72,7 +72,9 @@ module.exports = class VoicePlugin {
       mapScale: this.config["map-scale"],
       useTTS: this.config["tts"],
       showChat: this.config["show-chat"],
-      chatTTS: this.config["tts-chat"]
+      chatTTS: this.config["tts-chat"],
+      othersOnMinimap: this.config["others-on-minimap"],
+      deadNonProximity: this.config["dead-non-proximity"]
     };
   }
 
