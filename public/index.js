@@ -46,8 +46,8 @@ function tts(text, optionMap) {
   }
 
   window.speechSynthesis.speak(msg);
-
-  const timeout = setTimeout(() => window.speechSynthesis.cancel(), 5000);
+  let timeout;
+  msg.addEventListener("start", () => timeout = setTimeout(() => window.speechSynthesis.cancel(), 5000));
   msg.addEventListener("end", () => clearTimeout(timeout));
 }
 
@@ -93,6 +93,10 @@ function addNoto(innerHTML, notoClass) {
   noto.innerHTML = innerHTML;
 
   notoContainer.prepend(noto);
+
+  while (notoContainer.childElementCount >= 100) {
+    notoContainer.removeChild(notoContainer.childNodes[99]);
+  }
 }
 
 socket.on("authenticated", async (user) => {
@@ -193,11 +197,14 @@ socket.on("peer leave", async ({name, peerId}) => {
 
 // when a message is sent, show it or utter it if settings apply
 socket.on("chat", async ({name, message}) => {
+  if (!authed) return;
+
   if (showChat)
     addNoto(`<b>${name}:</b> ${message}`);
   
   if (chatTTS) {
     let rate = 1;
+    let pitch = 1;
 
     if (message.startsWith("fast:")) {
       rate = 1.4;
@@ -205,9 +212,15 @@ socket.on("chat", async ({name, message}) => {
     } else if (message.startsWith("slow:")) {
       rate = 0.35;
       message = message.substring(5);
+    } else if (message.startsWith("high:")) {
+      pitch = 1.7;
+      message = message.substring(5);
+    } else if (message.startsWith("low:")) {
+      pitch = 0.4;
+      message = message.substring(4);
     }
 
-    tts(`${name} says ${message}`, {volume: 0.5, rate});
+    tts(`${name} says ${message}`, {volume: 0.5, rate, pitch});
   }
 });
 
