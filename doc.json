@@ -37,6 +37,11 @@
       "description": "The rate, in milliseconds, to poll user data and send to clients.",
       "default": 200,
       "type": "number"
+    },
+    "map-scale": {
+      "description": "Describes how to translate a microstud (1/10 a stud) to a pixel on the minimap. At 0.1, one pixel is one stud.",
+      "default": 0.3,
+      "type": "number"
     }
   },
   "commands": [

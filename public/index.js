@@ -5,8 +5,7 @@ let me = null;
 
 const peers = {};
 
-const mapScale = 0.3;
-
+let mapScale = 0.3;
 let useProximity = true;
 let usePanning = true;
 let maxVoiceDistance = 100;
@@ -19,6 +18,7 @@ function setNetConfig(config) {
   useProximity = config.useProximity;
   usePanning = config.usePanning;
   deadVoice = config.deadVoice;
+  mapScale = config.mapScale;
 }
 
 async function getUserMedia() {

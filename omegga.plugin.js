@@ -68,7 +68,8 @@ module.exports = class VoicePlugin {
       falloffFactor: this.config["falloff-factor"],
       useProximity: this.config["proximity"],
       usePanning: this.config["panning"],
-      deadVoice: this.config["voice-when-dead"]
+      deadVoice: this.config["voice-when-dead"],
+      mapScale: this.config["map-scale"]
     };
   }
 
