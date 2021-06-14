@@ -357,4 +357,15 @@ socket.on("transforms", (transforms) => {
       }
     }
   }
+
+  // draw a player list in the corner of the canvas
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "#eee";
+  ctx.textAlign = "left";
+  let j = 0;
+  const names = transforms.filter((t) => t.peerId).map((t) => t.name);
+  names.unshift("Connected:");
+  for (let i = 0; i < names.length; i++) {
+    ctx.fillText(names[i], 10, 20 + i * 16);
+  }
 });
