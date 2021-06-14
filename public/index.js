@@ -5,12 +5,21 @@ let me = null;
 
 const peers = {};
 
-const mapScale = 0.5;
+const mapScale = 0.3;
 
 let useProximity = true;
 let usePanning = true;
 let maxVoiceDistance = 100;
 let falloffFactor = 2;
+let deadVoice = true;
+
+function setNetConfig(config) {
+  maxVoiceDistance = config.maxVoiceDistance;
+  falloffFactor = config.falloffFactor;
+  useProximity = config.useProximity;
+  usePanning = config.usePanning;
+  deadVoice = config.deadVoice;
+}
 
 async function getUserMedia() {
   try {
@@ -39,10 +48,7 @@ socket.on("hi", ({code, serverName, hostName, config}) => {
   const authCodeElement = document.getElementById("auth-code");
   authCodeElement.value = `/auth ${code}`;
 
-  maxVoiceDistance = config.maxVoiceDistance;
-  falloffFactor = config.falloffFactor;
-  useProximity = config.useProximity;
-  usePanning = config.usePanning;
+  setNetConfig(config);
 });
 
 // when the server notices we left, refresh the page
@@ -54,15 +60,44 @@ socket.on("bye", () => {
 
 // when the player authenticates, we need to switch the frontend over
 let canvas;
+let notoContainer;
+
+function addNoto(innerHTML, notoClass) {
+  if (notoContainer == null) return;
+
+  const noto = document.createElement("div");
+  noto.classList.add("noto");
+  if (notoClass) noto.classList.add(notoClass);
+  noto.innerHTML = innerHTML;
+
+  notoContainer.prepend(noto);
+}
+
 socket.on("authenticated", async (user) => {
   document.getElementsByClassName("auth-code")[0].remove();
   document.getElementById("desc").innerHTML = `You are logged in as <b>${user}</b>.`;
 
+  // create the container
+  const container = document.createElement("div");
+  container.id = "content-container";
+
+  // create the canvas
   canvas = document.createElement("canvas");
   canvas.id = "canvas";
   canvas.width = 300;
   canvas.height = 300;
-  document.getElementById("page-body").appendChild(canvas);
+  container.appendChild(canvas);
+
+  // create the noto container
+  notoContainer = document.createElement("div");
+  notoContainer.id = "noto-container";
+  container.appendChild(notoContainer);
+
+  // finally append the container to the scene
+  document.getElementById("page-body").appendChild(container);
+
+  // and add a notification.
+  addNoto("Connected to voice chat.");
 
   authed = true;
   me = user;
@@ -88,6 +123,7 @@ function onCallStart(name, call, stream) {
   const audio = document.createElement("video");
   audio.srcObject = stream;
   audio.muted = true;
+  audio.style.display = "none";
   audio.onloadedmetadata = () => audio.play();
 
   document.body.appendChild(audio);
@@ -102,6 +138,9 @@ socket.on("peer join", async ({name, peerId}) => {
   
   // don't do anything when it refers to us
   if (peerId == peer.id) return;
+
+  // add a noto
+  addNoto(`<b>${name}</b> joined the voice chat.`, "noto-yellow");
 
   console.log("calling " + name + " (peer ID " + peerId + ")");
   const mediaStream = await getUserMedia();
@@ -121,8 +160,15 @@ socket.on("peer join", async ({name, peerId}) => {
 socket.on("peer leave", async ({name, peerId}) => {
   if (peers[peerId] == null) return;
 
+  addNoto(`<b>${name}</b> left the voice chat.`);
+
   console.log("call closed with " + name);
   delete peers[peerId];
+});
+
+// when we want to leave, disconnect
+window.addEventListener("beforeunload", () => {
+  socket.disconnect();
 });
 
 // we should also forcibly accept calls
@@ -161,6 +207,15 @@ socket.on("transforms", (transforms) => {
 
   if (myTransform == null) return;
 
+  // draw the circle representing hearing range
+  if (useProximity) {
+    ctx.beginPath();
+    ctx.arc(150, 150, maxVoiceDistance * mapScale, 0, 2 * Math.PI, false);
+    ctx.strokeStyle = "#aaa";
+    ctx.stroke();
+  }
+
+  // prepare for player rendering
   ctx.fillStyle = "#ddd";
   ctx.strokeStyle = "#c00";
   ctx.textAlign = "center";
@@ -187,6 +242,13 @@ socket.on("transforms", (transforms) => {
     // if they have a peer id, set their sound accordingly
     if (transform.peerId && peerAudio) {
       const theta = Math.atan2(-diffX, diffY) - (myTransform.yaw * Math.PI / 180);
+
+      if (!deadVoice && transform.isDead) {
+        // this person is dead, don't transmit their voice
+        peerAudio.leftGain.gain.value = 0;
+        peerAudio.rightGain.gain.value = 0;
+        continue;
+      }
 
       if (useProximity) {
         const dist = Math.hypot(transform.x - myTransform.x, transform.y - myTransform.y, transform.z - myTransform.z);

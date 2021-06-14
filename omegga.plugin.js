@@ -54,11 +54,22 @@ module.exports = class VoicePlugin {
         y: transform.pos[1],
         z: transform.pos[2],
         yaw: parseFloat(rot.groups.yaw),
-        peerId
+        peerId,
+        isDead: transform.isDead
       });
     }
 
     this.io.emit("transforms", transforms);
+  }
+
+  netConfig() {
+    return {
+      maxVoiceDistance: this.config["max-distance"] * 10,
+      falloffFactor: this.config["falloff-factor"],
+      useProximity: this.config["proximity"],
+      usePanning: this.config["panning"],
+      deadVoice: this.config["voice-when-dead"]
+    };
   }
 
   async init() {
@@ -119,12 +130,7 @@ module.exports = class VoicePlugin {
         const serverStatus = await this.omegga.getServerStatus();
 
         // client must link with their user in-game
-        socket.emit("hi", {code, serverName: serverStatus.serverName, hostName: this.omegga.host.name, config: {
-          maxVoiceDistance: this.config["max-distance"] * 10,
-          falloffFactor: this.config["falloff-factor"],
-          useProximity: this.config["proximity"],
-          usePanning: this.config["panning"]
-        }});
+        socket.emit("hi", {code, serverName: serverStatus.serverName, hostName: this.omegga.host.name, config: this.netConfig()});
 
         const player = {socket, code, user: null, peerId: data.peerId};
         this.players.push(player);
@@ -134,6 +140,7 @@ module.exports = class VoicePlugin {
         // remove this socket from the players array
         for (let i = this.players.length - 1; i >= 0; i--) {
           if (this.players[i].socket == socket) {
+            this.io.emit("peer leave", {name: this.players[i].user, peerId: this.players[i].peerId});
             this.players.splice(i, 1);
           }
         }
@@ -148,7 +155,7 @@ module.exports = class VoicePlugin {
     // start sending transforms regularly
     this.transformInterval = setInterval(async () => {
       await this.sendTransforms();
-    }, 200);
+    }, this.config["polling-rate"]);
 
     // when a player leaves, clean them up and inform all other clients
     this.omegga.on("leave", async (player) => {
@@ -167,6 +174,7 @@ module.exports = class VoicePlugin {
           // found a working player code, attach it
           player.user = user;
           this.omegga.whisper(user, "<color=\"ff0\">Authentication successful.</>");
+          this.omegga.broadcast(`<color="ff0">${user}</> has connected to voice chat.`);
 
           // inform our socket
           player.socket.emit("authenticated", user);
@@ -177,11 +185,15 @@ module.exports = class VoicePlugin {
           return;
         }
       }
+
       this.omegga.whisper(user, "<color=\"f00\">Invalid authentication code.</>");
     });
 
     return {registeredCommands: ["auth"]};
   }
 
-  async stop() {}
+  async stop() {
+    // tell our clients to refresh their page
+    this.io.emit("bye");
+  }
 }

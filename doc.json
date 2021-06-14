@@ -27,6 +27,16 @@
       "description": "How much the voice volume should fall off over a distance as it reaches the maximum distance. Greater values mean that the voice will fall off more extremely at lower distances, creating an inverse square-ish curve.",
       "default": 2,
       "type": "number"
+    },
+    "voice-when-dead": {
+      "description": "Whether or not a player's voice should transmit when they are dead.",
+      "default": true,
+      "type": "boolean"
+    },
+    "polling-rate": {
+      "description": "The rate, in milliseconds, to poll user data and send to clients.",
+      "default": 200,
+      "type": "number"
     }
   },
   "commands": [

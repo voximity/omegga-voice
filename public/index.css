@@ -14,7 +14,8 @@ body {
 }
 
 .auth-container {
-  width: 600px;
+  width: 700px;
+  max-width: calc(100% - 24px);
   margin: 0 auto;
 }
 
@@ -55,7 +56,6 @@ body {
 }
 
 #canvas {
-  margin: 8px auto;
   background: #272c3b;
   border-radius: 8px;
   display: block;
@@ -66,4 +66,33 @@ body {
   font-weight: 400;
   text-align: center;
   margin: 0;
+}
+
+#content-container {
+  display: flex;
+  margin: 8px 0;
+}
+
+#content-container > * {
+  margin: 0 8px;
+}
+
+#noto-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.noto {
+  margin: 4px 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 2px solid #aaa;
+  background: #666;
+}
+
+.noto-yellow {
+  border: 2px solid #fcd303;
+  background: #ada05f;
 }
