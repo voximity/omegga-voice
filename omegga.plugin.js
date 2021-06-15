@@ -32,16 +32,16 @@ module.exports = class VoicePlugin {
 
     // wait for the pawn and position watchers to return all the results
     const [ pawns, deadFigures, positions ] = await Promise.all([
-      this.watchLogChunk('GetAll BP_PlayerController_C Pawn', pawnRegExp, {first: 'index'}),
-      this.watchLogChunk('GetAll BP_FigureV2_C bIsDead', deadFigureRegExp, {first: 'index'}),
-      this.watchLogChunk('GetAll SceneComponent RelativeLocation Name=CollisionCylinder', posRegExp, {first: 'index'}),
+      this.omegga.watchLogChunk('GetAll BP_PlayerController_C Pawn', pawnRegExp, {first: 'index'}),
+      this.omegga.watchLogChunk('GetAll BP_FigureV2_C bIsDead', deadFigureRegExp, {first: 'index'}),
+      this.omegga.watchLogChunk('GetAll SceneComponent RelativeLocation Name=CollisionCylinder', posRegExp, {first: 'index'}),
     ]);
 
     return pawns
       // iterate through the pawn+controllers
       .map(pawn => ({
       // find the player for the associated controller
-        player: this.getPlayer(pawn.groups.controller),
+        player: this.omegga.getPlayer(pawn.groups.controller),
         // find the position for the associated pawn
         pos: positions.find(pos => pawn.groups.pawn === pos.groups.pawn),
         isDead: deadFigures.find(dead => pawn.groups.pawn === dead.groups.pawn),
