@@ -96,7 +96,7 @@ module.exports = class VoicePlugin {
         const last = this.lastKnownPlayerPositions[plr.name];
         if (!last) continue;
 
-        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: true};
+        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: last.isDead};
       }
 
       if (!transform || !transform.pos) continue;
