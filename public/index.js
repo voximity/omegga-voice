@@ -1,5 +1,5 @@
 const socket = io();
-const peer = new Peer({host: location.hostname, port: location.port, path: "/peerjs"}); // TODO: this port should reflect the config's
+const peer = new Peer({host: location.hostname, port: location.port, secure: window.location.protocol == "https:", path: "/peerjs"});
 let authed = false;
 let me = null;
 
