@@ -15,6 +15,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "hasbin": "^1.2.3",
+    "lodash": "^4.17.21",
     "peer": "^0.6.1",
     "pem": "^1.14.4",
     "socket.io": "^4.1.2"

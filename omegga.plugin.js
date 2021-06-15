@@ -4,6 +4,7 @@ const https = require("https");
 const io = require("socket.io");
 const fs = require("fs");
 const pem = require("pem").promisified;
+const _ = require("lodash");
 const {ExpressPeerServer} = require("peer");
 
 const CODE_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
@@ -84,7 +85,7 @@ module.exports = class VoicePlugin {
       const handleColor = match => {
         // color index, return the colorset color
         if (match.color)
-          return color.DEFAULT_COLORSET[Number(match)].slice();
+          return OMEGGA_UTIL.color.DEFAULT_COLORSET[Number(match)].slice();
         else
           return [match.r, match.g, match.b, match.a].map(Number);
       };
@@ -93,12 +94,12 @@ module.exports = class VoicePlugin {
       return rulesets.map(r => ({
         name: r.groups.name,
         ruleset: r.groups.ruleset,
-        inSession: ruleInSession.find(s => s.groups.ruleset == r.groups.ruleset)?.groups?.insession == 'True' || false,
+        inSession: ruleInSession.find(s => s.groups.ruleset == r.groups.ruleset).groups.insession == "True",
 
         // get the players from the team members
         members: (ruleMembers
           .find(m => m.item.ruleset === r.groups.ruleset)).members // get the members from this ruleset
-          .map(m => this.getPlayer(m.state)), // get the players
+          .map(m => this.omegga.getPlayer(m.state)), // get the players
 
         // get the teams for this ruleset
         teams: teamMembers
@@ -113,11 +114,11 @@ module.exports = class VoicePlugin {
               ['r', 'g', 'b', 'a'])),
 
             // get the players from the team
-            members: m.members.map(m => this.getPlayer(m.state)),
+            members: m.members.map(m => this.omegga.getPlayer(m.state)),
           }))
       }));
     } catch (e) {
-      Omegga.error('error getting minigames', e);
+      console.log(e);
       return undefined;
     }
   }
@@ -144,7 +145,7 @@ module.exports = class VoicePlugin {
 
     const transformData = await this.getTransforms();
     const players = this.omegga.getPlayers();
-    const minigames = await this.omegga.getMinigames();
+    const minigames = await this.getMinigames();
 
     for (const plr of players) {
       // find the minigame the player is in
