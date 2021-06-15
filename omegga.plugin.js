@@ -15,6 +15,7 @@ module.exports = class VoicePlugin {
     this.store = store;
 
     this.players = [];
+    this.lastKnownPlayerPositions = {};
   }
 
   randomCode(length) {
@@ -45,16 +46,32 @@ module.exports = class VoicePlugin {
     const transforms = [];
 
     const transformData = await this.getTransforms();
-    for (const transform of transformData[0]) {
-      const rot = transformData[1].find(r => r.groups.pawn == transform.pawn);
-      const player = this.players.find(p => p.user == transform.player.name);
-      const peerId = player?.peerId;
+
+    const players = this.omegga.getPlayers();
+
+    for (const plr of players) {
+      let transform = transformData[0].find(t => t.player.name == plr.name);
+      if (transform)
+        this.lastKnownPlayerPositions[plr.name] = transform.pos;
+      else
+        transform = {player: plr, pos: this.lastKnownPlayerPositions[plr.name], pawn: plr.pawn};
+
+      if (!transform) continue;
+      let rot = transformData[1].find(r => r.groups.pawn == transform.pawn);
+      if (rot)
+        rot = parseFloat(rot.groups.yaw);
+      else
+        rot = 0;
+
+      const aplr = this.players.find(p => p.user == transform.player.name);
+      const peerId = aplr?.peerId;
+
       transforms.push({
-        name: transform.player.name,
+        name: plr.name,
         x: transform.pos[0],
         y: transform.pos[1],
         z: transform.pos[2],
-        yaw: parseFloat(rot.groups.yaw),
+        yaw: rot,
         peerId,
         isDead: transform.isDead
       });
