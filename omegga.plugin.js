@@ -56,7 +56,8 @@ module.exports = class VoicePlugin {
       else
         transform = {player: plr, pos: this.lastKnownPlayerPositions[plr.name], pawn: plr.pawn};
 
-      if (!transform) continue;
+      if (!transform || !transform.pos) continue;
+      
       let rot = transformData[1].find(r => r.groups.pawn == transform.pawn);
       if (rot)
         rot = parseFloat(rot.groups.yaw);
