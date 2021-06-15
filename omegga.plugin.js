@@ -1,4 +1,5 @@
 const express = require("express");
+const http = require("http");
 const https = require("https");
 const io = require("socket.io");
 const fs = require("fs");
@@ -79,32 +80,41 @@ module.exports = class VoicePlugin {
   }
 
   async init() {
+    const useHttps = this.config["https"];
+
     // get https working
     // this code is borrowed from the omegga source
-    if (!require("hasbin").sync("openssl")) {
+    if (useHttps && !require("hasbin").sync("openssl")) {
       console.log("Can't start voice server without openssl installed!");
       return;
     }
 
     let ssl = {};
-    if (fs.existsSync("./cert.pem")) {
-      console.log("Using existing SSL keys");
+    if (useHttps) {
+      if (fs.existsSync("./cert.pem")) {
+        console.log("Using existing SSL keys");
 
-      ssl = {cert: fs.readFileSync("./cert.pem"), key: fs.readFileSync("./key.pem")};
+        ssl = {cert: fs.readFileSync("./cert.pem"), key: fs.readFileSync("./key.pem")};
+      } else {
+        console.log("Generating new SSL keys");
+
+        const keys = await pem.createCertificate({days: 360, selfSigned: true});
+        ssl = {cert: keys.certificate, key: keys.serviceKey};
+
+        // write out
+        fs.writeFileSync("./cert.pem", keys.certificate);
+        fs.writeFileSync("./key.pem", keys.serviceKey);
+      }
     } else {
-      console.log("Generating new SSL keys");
-
-      const keys = await pem.createCertificate({days: 360, selfSigned: true});
-      ssl = {cert: keys.certificate, key: keys.serviceKey};
-
-      // write out
-      fs.writeFileSync("./cert.pem", keys.certificate);
-      fs.writeFileSync("./key.pem", keys.serviceKey);
+      console.log("Using HTTP");
     }
 
     // set up the web server
     this.web = express();
-    this.server = https.createServer(ssl, this.web);
+    if (useHttps)
+      this.server = https.createServer(ssl, this.web);
+    else
+      this.server = http.createServer(this.web);
     this.io = io(this.server);
 
     const server = this.server;

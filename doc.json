@@ -8,6 +8,11 @@
       "default": 7778,
       "type": "number"
     },
+    "https": {
+      "description": "Whether or not the server will run off of HTTPS. Disable this if you plan on using a reverse proxy to point to this server.",
+      "default": true,
+      "type": "boolean"
+    },
     "proximity": {
       "description": "Whether or not to use proximity voice chat. People closer will sound louder.",
       "default": true,
