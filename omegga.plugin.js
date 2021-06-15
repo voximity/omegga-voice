@@ -191,7 +191,7 @@ module.exports = class VoicePlugin {
         if (player.code == code && player.user == null) {
           // found a working player code, attach it
           player.user = user;
-          this.omegga.whisper(user, "<color=\"ff0\">Authentication successful.</>");
+          this.omegga.whisper(user, "<color=\"ff0\">Authentication successful. Please refocus your browser window to finish.</>");
           this.omegga.broadcast(`<color="ff0"><b>${user}</></> joined the voice chat.`);
 
           // inform our socket
