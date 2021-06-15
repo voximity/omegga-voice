@@ -295,8 +295,8 @@ socket.on("transforms", (transforms) => {
 
     if (
       !transform.isDead && // don't show dead players
-      (othersOnMinimap || (teammatesOnMinimap && (isTeammate || transform.minigame == null))) || // show others IF othersOnMinimap, or show teammates IF is teammate and teammatesOnMinimap
-      transform == myTransform // always show ourselves
+      ((othersOnMinimap || (teammatesOnMinimap && (isTeammate || transform.minigame == null))) || // show others IF othersOnMinimap, or show teammates IF is teammate and teammatesOnMinimap
+      transform == myTransform) // always show ourselves
     ) {
 
       if (transform.minigame) {
