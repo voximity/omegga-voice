@@ -62,16 +62,16 @@ module.exports = class VoicePlugin {
   getTransforms() {
     // patterns to match console logs
     const rotRegExp = /(?<index>\d+)\) CapsuleComponent .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.CollisionCylinder\.RelativeRotation = \(Pitch=(?<pitch>[\d\.-]+),Yaw=(?<yaw>[\d\.-]+),Roll=(?<roll>[\d\.-]+)\)$/;
-    const crouchedRegExp = /(?<index>\d+)\) BP_FigureV2_C .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.bIsCrouched = (?<crouched>(True|False))$/;
-    const emotePlayerRegExp = /(?<index>\d+)\) BP_FigureV2_C .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.ActiveEmotes =$/;
-    const emoteStateRegExp = /^\t(?<index>\d+): BlueprintGeneratedClass'(.+)Emotes\/BP_Emote_(?<emote>\w+).\w+'$/;
+    //const crouchedRegExp = /(?<index>\d+)\) BP_FigureV2_C .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.bIsCrouched = (?<crouched>(True|False))$/;
+    //const emotePlayerRegExp = /(?<index>\d+)\) BP_FigureV2_C .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.ActiveEmotes =$/;
+    //const emoteStateRegExp = /^\t(?<index>\d+): BlueprintGeneratedClass'(.+)Emotes\/BP_Emote_(?<emote>\w+).\w+'$/;
 
     // run the pattern commands
     return Promise.all([
       this.getAllPlayerPositions(),
       this.omegga.watchLogChunk('GetAll SceneComponent RelativeRotation Name=CollisionCylinder', rotRegExp, {first: 'index'}),
-      this.omegga.watchLogChunk('GetAll BP_FigureV2_C bIsCrouched', crouchedRegExp, {first: 'index'}),
-      this.omegga.watchLogArray('GetAll BP_FigureV2_C ActiveEmotes', emotePlayerRegExp, emoteStateRegExp),
+      //this.omegga.watchLogChunk('GetAll BP_FigureV2_C bIsCrouched', crouchedRegExp, {first: 'index'}),
+      //this.omegga.watchLogArray('GetAll BP_FigureV2_C ActiveEmotes', emotePlayerRegExp, emoteStateRegExp),
     ]);
   }
 
@@ -83,11 +83,15 @@ module.exports = class VoicePlugin {
     const players = this.omegga.getPlayers();
 
     for (const plr of players) {
-      let transform = transformData[0].find(t => t.player.pawn == plr.pawn);
+      let transform = transformData[0].find(t => t.player.name == plr.name);
       if (transform)
-        this.lastKnownPlayerPositions[plr.name] = transform.pos;
-      else
-        transform = {player: plr, pos: this.lastKnownPlayerPositions[plr.name], pawn: plr.pawn};
+        this.lastKnownPlayerPositions[plr.name] = {pos: transform.pos, pawn: transform.pawn};
+      else {
+        const last = this.lastKnownPlayerPositions[plr.name];
+        if (!last) continue;
+
+        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: true};
+      }
 
       if (!transform || !transform.pos) continue;
 
