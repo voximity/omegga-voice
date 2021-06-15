@@ -83,19 +83,21 @@ module.exports = class VoicePlugin {
     const players = this.omegga.getPlayers();
 
     for (const plr of players) {
-      let transform = transformData[0].find(t => t.player.name == plr.name);
-      
-      if (transform) {
-        if (!this.lastKnownPlayerPositions[plr.name])
-          this.lastKnownPlayerPositions[plr.name] = {unknownCount: 0};
+      let transform = transformData[0].find(t => t.player.controller == plr.controller);
 
-        const last = this.lastKnownPlayerPositions[plr.name];
+      if (transform) {
+        if (!this.lastKnownPlayerPositions[plr.controller])
+          this.lastKnownPlayerPositions[plr.controller] = {unknownCount: 0};
+
+        const last = this.lastKnownPlayerPositions[plr.controller];
+
         if (transform.pos) last.pos = transform.pos;
-        if (transform.pawn) last.pawn = transform.pawn;
+        last.pawn = transform.pawn;
         last.isDead = transform.isDead;
         last.unknownCount = 0;
+
       } else {
-        const last = this.lastKnownPlayerPositions[plr.name];
+        const last = this.lastKnownPlayerPositions[plr.controller];
         if (!last) continue;
 
         last.unknownCount++;
@@ -240,7 +242,7 @@ module.exports = class VoicePlugin {
 
     // when a player leaves, clean them up and inform all other clients
     this.omegga.on("leave", async (player) => {
-      delete this.lastKnownPlayerPositions[player.name];
+      delete this.lastKnownPlayerPositions[player.controller];
 
       for (let i = this.players.length - 1; i >= 0; i--) {
         if (this.players[i].user == player.name) {
