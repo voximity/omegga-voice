@@ -26,7 +26,7 @@ module.exports = class VoicePlugin {
   }
 
   async getAllPlayerPositions() {
-    const pawnRegExp = /(?<index>\d+)\) BP_PlayerController_C .+?PersistentLevel\.(?<controller>BP_PlayerController_C_\d+)\.Pawn = BP_FigureV2_C'.+?:PersistentLevel.(?<pawn>BP_FigureV2_C_\d+)'$/;
+    const pawnRegExp = /(?<index>\d+)\) BP_PlayerController_C .+?PersistentLevel\.(?<controller>BP_PlayerController_C_\d+)\.Pawn = (?:BP_FigureV2_C'.+?:PersistentLevel.(?<pawn>BP_FigureV2_C_\d+))?'$/;
     const posRegExp = /(?<index>\d+)\) CapsuleComponent .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.CollisionCylinder\.RelativeLocation = \(X=(?<x>[\d.-]+),Y=(?<y>[\d.-]+),Z=(?<z>[\d.-]+)\)$/;
     const deadFigureRegExp = /(?<index>\d+)\) BP_FigureV2_C .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.bIsDead = (?<dead>(True|False))$/;
 
@@ -47,14 +47,14 @@ module.exports = class VoicePlugin {
         isDead: deadFigures.find(dead => pawn.groups.pawn === dead.groups.pawn),
         pawn,
       }))
-      // filter by only those who have both player and position
-      .filter(p => p.player/* && p.pos*/)// <-- we don't actually want to do this, i think this is what's breaking
+      // filter by only those who have both player. previously we filtered by position but this breaks for players without a pawn, instead it's preferable to pass null
+      .filter(p => p.player)
       // turn the position into a [x, y, z] number array (last 3 items in the array)
       .map(p => ({
         player: p.player,
-        pawn: p.pawn.groups.pawn,
-        pos: p.pos.slice(3).map(Number),
-        isDead: p.isDead && p.isDead.groups.dead === 'True',
+        pawn: p.pawn.groups.pawn || null,
+        pos: p.pos ? p.pos.slice(3).map(Number) : null,
+        isDead: p.isDead ? p.isDead.groups.dead === 'True' : true,
       }));
   }
 
@@ -84,9 +84,15 @@ module.exports = class VoicePlugin {
 
     for (const plr of players) {
       let transform = transformData[0].find(t => t.player.name == plr.name);
-      if (transform)
-        this.lastKnownPlayerPositions[plr.name] = {pos: transform.pos, pawn: transform.pawn, isDead: transform.isDead};
-      else {
+      if (transform) {
+        if (!this.lastKnownPlayerPositions[plr.name])
+          this.lastKnownPlayerPositions[plr.name] = {};
+
+        const last = this.lastKnownPlayerPositions[plr.name];
+        if (transform.pos) last.pos = transform.pos;
+        if (transform.pawn) last.pawn = transform.pawn;
+        last.isDead = transform.isDead;
+      } else {
         const last = this.lastKnownPlayerPositions[plr.name];
         if (!last) continue;
 
@@ -116,6 +122,7 @@ module.exports = class VoicePlugin {
     }
 
     this.io.emit("transforms", transforms);
+    console.log(JSON.stringify(transforms));
   }
 
   netConfig() {

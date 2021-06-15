@@ -290,7 +290,7 @@ socket.on("transforms", (transforms) => {
     const pX = diffY * mapScale + 150;
     const pY = -diffX * mapScale + 150;
 
-    if (othersOnMinimap || transform == myTransform) {
+    if ((othersOnMinimap || transform == myTransform) && !transform.isDead) {
       ctx.fillText(transform.name, pX, pY + 4);
 
       // draw their look vector
