@@ -84,6 +84,7 @@ module.exports = class VoicePlugin {
 
     for (const plr of players) {
       let transform = transformData[0].find(t => t.player.name == plr.name);
+      
       if (transform) {
         if (!this.lastKnownPlayerPositions[plr.name])
           this.lastKnownPlayerPositions[plr.name] = {unknownCount: 0};
@@ -98,7 +99,7 @@ module.exports = class VoicePlugin {
         if (!last) continue;
 
         last.unknownCount++;
-        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: last.unknownCount > 6 ? true : last.isDead};
+        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: last.unknownCount > 10 || last.isDead};
       }
 
       if (!transform || !transform.pos) continue;
