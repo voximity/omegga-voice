@@ -86,17 +86,19 @@ module.exports = class VoicePlugin {
       let transform = transformData[0].find(t => t.player.name == plr.name);
       if (transform) {
         if (!this.lastKnownPlayerPositions[plr.name])
-          this.lastKnownPlayerPositions[plr.name] = {};
+          this.lastKnownPlayerPositions[plr.name] = {unknownCount: 0};
 
         const last = this.lastKnownPlayerPositions[plr.name];
         if (transform.pos) last.pos = transform.pos;
         if (transform.pawn) last.pawn = transform.pawn;
         last.isDead = transform.isDead;
+        last.unknownCount = 0;
       } else {
         const last = this.lastKnownPlayerPositions[plr.name];
         if (!last) continue;
 
-        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: last.isDead};
+        last.unknownCount++;
+        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: last.unknownCount > 6 ? true : last.isDead};
       }
 
       if (!transform || !transform.pos) continue;
@@ -237,6 +239,8 @@ module.exports = class VoicePlugin {
 
     // when a player leaves, clean them up and inform all other clients
     this.omegga.on("leave", async (player) => {
+      delete this.lastKnownPlayerPositions[player.name];
+
       for (let i = this.players.length - 1; i >= 0; i--) {
         if (this.players[i].user == player.name) {
           this.omegga.broadcast(`<color="ff0"><b>${player.name}</></> left the voice chat.`);
