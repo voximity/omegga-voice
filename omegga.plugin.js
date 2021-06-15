@@ -122,7 +122,6 @@ module.exports = class VoicePlugin {
     }
 
     this.io.emit("transforms", transforms);
-    console.log(JSON.stringify(transforms));
   }
 
   netConfig() {
