@@ -1,5 +1,5 @@
 const socket = io();
-const peer = new Peer({host: location.hostname, port: location.port, secure: window.location.protocol == "https:", path: "/peerjs"});
+const peer = new Peer({host: location.hostname, port: location.port, path: "/peerjs"});
 let authed = false;
 let me = null;
 
@@ -81,7 +81,7 @@ socket.on("hi", ({code, serverName, hostName, config}) => {
 // this is also emitted when the socket initially starts
 // for old clients to catch back up
 socket.on("bye", () => {
-  window.location.reload();
+  setTimeout(() => window.location.reload(), 1000); // give a second to reload
 });
 
 // when the player authenticates, we need to switch the frontend over
