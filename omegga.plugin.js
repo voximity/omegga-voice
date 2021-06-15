@@ -85,12 +85,12 @@ module.exports = class VoicePlugin {
     for (const plr of players) {
       let transform = transformData[0].find(t => t.player.name == plr.name);
       if (transform)
-        this.lastKnownPlayerPositions[plr.name] = {pos: transform.pos, pawn: transform.pawn};
+        this.lastKnownPlayerPositions[plr.name] = {pos: transform.pos, pawn: transform.pawn, isDead: transform.isDead};
       else {
         const last = this.lastKnownPlayerPositions[plr.name];
         if (!last) continue;
 
-        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: true};
+        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: last.isDead};
       }
 
       if (!transform || !transform.pos) continue;
