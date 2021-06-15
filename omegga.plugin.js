@@ -156,7 +156,7 @@ module.exports = class VoicePlugin {
 
     // start listening
     this.server.listen(this.config["port"], () => {
-      console.log(`Voice chat webserver active at http://localhost:${this.config["port"]}`);
+      console.log(`Voice chat webserver active at https://localhost:${this.config["port"]}`);
     });
 
     // start sending transforms regularly
