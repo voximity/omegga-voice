@@ -25,6 +25,39 @@ module.exports = class VoicePlugin {
     return code;
   }
 
+  async getAllPlayerPositions() {
+    const pawnRegExp = /(?<index>\d+)\) BP_PlayerController_C .+?PersistentLevel\.(?<controller>BP_PlayerController_C_\d+)\.Pawn = BP_FigureV2_C'.+?:PersistentLevel.(?<pawn>BP_FigureV2_C_\d+)'$/;
+    const posRegExp = /(?<index>\d+)\) CapsuleComponent .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.CollisionCylinder\.RelativeLocation = \(X=(?<x>[\d.-]+),Y=(?<y>[\d.-]+),Z=(?<z>[\d.-]+)\)$/;
+    const deadFigureRegExp = /(?<index>\d+)\) BP_FigureV2_C .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.bIsDead = (?<dead>(True|False))$/;
+
+    // wait for the pawn and position watchers to return all the results
+    const [ pawns, deadFigures, positions ] = await Promise.all([
+      this.watchLogChunk('GetAll BP_PlayerController_C Pawn', pawnRegExp, {first: 'index'}),
+      this.watchLogChunk('GetAll BP_FigureV2_C bIsDead', deadFigureRegExp, {first: 'index'}),
+      this.watchLogChunk('GetAll SceneComponent RelativeLocation Name=CollisionCylinder', posRegExp, {first: 'index'}),
+    ]);
+
+    return pawns
+      // iterate through the pawn+controllers
+      .map(pawn => ({
+      // find the player for the associated controller
+        player: this.getPlayer(pawn.groups.controller),
+        // find the position for the associated pawn
+        pos: positions.find(pos => pawn.groups.pawn === pos.groups.pawn),
+        isDead: deadFigures.find(dead => pawn.groups.pawn === dead.groups.pawn),
+        pawn,
+      }))
+      // filter by only those who have both player and position
+      // .filter(p => p.player && p.pos) <-- we don't actually want to do this, i think this is what's breaking
+      // turn the position into a [x, y, z] number array (last 3 items in the array)
+      .map(p => ({
+        player: p.player,
+        pawn: p.pawn.groups.pawn,
+        pos: p.pos.slice(3).map(Number),
+        isDead: p.isDead && p.isDead.groups.dead === 'True',
+      }));
+  }
+
   // thanks cake
   getTransforms() {
     // patterns to match console logs
@@ -35,7 +68,7 @@ module.exports = class VoicePlugin {
 
     // run the pattern commands
     return Promise.all([
-      this.omegga.getAllPlayerPositions(),
+      this.getAllPlayerPositions(),
       this.omegga.watchLogChunk('GetAll SceneComponent RelativeRotation Name=CollisionCylinder', rotRegExp, {first: 'index'}),
       this.omegga.watchLogChunk('GetAll BP_FigureV2_C bIsCrouched', crouchedRegExp, {first: 'index'}),
       this.omegga.watchLogArray('GetAll BP_FigureV2_C ActiveEmotes', emotePlayerRegExp, emoteStateRegExp),
@@ -50,14 +83,14 @@ module.exports = class VoicePlugin {
     const players = this.omegga.getPlayers();
 
     for (const plr of players) {
-      let transform = transformData[0].find(t => t.player.name == plr.name);
+      let transform = transformData[0].find(t => t.player.pawn == plr.pawn);
       if (transform)
         this.lastKnownPlayerPositions[plr.name] = transform.pos;
       else
         transform = {player: plr, pos: this.lastKnownPlayerPositions[plr.name], pawn: plr.pawn};
 
       if (!transform || !transform.pos) continue;
-      
+
       let rot = transformData[1].find(r => r.groups.pawn == transform.pawn);
       if (rot)
         rot = parseFloat(rot.groups.yaw);
