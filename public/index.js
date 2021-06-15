@@ -323,7 +323,7 @@ socket.on("transforms", (transforms) => {
     if (transform.peerId && peerAudio) {
       const theta = Math.atan2(-diffX, diffY) - (myTransform.yaw * Math.PI / 180);
 
-      if (!deadVoice && deadNonProximity && !myTransform.isDead && transform.isDead && !myTransform.minigame?.inSession) {
+      if (!deadVoice && deadNonProximity && !myTransform.isDead && transform.isDead && myTransform.minigame && !myTransform.minigame.inSession) {
         // only when the minigame is not in session
         peerAudio.leftGain.gain.value = 0.4;
         peerAudio.rightGain.gain.value = 0.4;

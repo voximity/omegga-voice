@@ -70,7 +70,7 @@ module.exports = class VoicePlugin {
 
     try {
       // parse console output to get the minigame info
-      const [rulesets, ruleMembers, teamMembers, teamNames, teamColors] = await Promise.all([
+      const [rulesets, ruleMembers, teamMembers, teamNames, teamColors, ruleInSession] = await Promise.all([
         this.omegga.watchLogChunk('GetAll BP_Ruleset_C RulesetName', ruleNameRegExp, {first: 'index'}),
         this.omegga.watchLogArray('GetAll BP_Ruleset_C MemberStates', ruleMembersRegExp, playerStateRegExp),
         this.omegga.watchLogArray('GetAll BP_Team_C MemberStates', teamMembersRegExp, playerStateRegExp),
@@ -93,7 +93,7 @@ module.exports = class VoicePlugin {
       return rulesets.map(r => ({
         name: r.groups.name,
         ruleset: r.groups.ruleset,
-        inSession: r.groups.insession == 'True',
+        inSession: ruleInSession.find(s => s.groups.ruleset == r.groups.ruleset)?.groups?.insession == 'True' || false,
 
         // get the players from the team members
         members: (ruleMembers
