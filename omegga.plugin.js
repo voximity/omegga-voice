@@ -48,7 +48,7 @@ module.exports = class VoicePlugin {
         pawn,
       }))
       // filter by only those who have both player and position
-      // .filter(p => p.player && p.pos) <-- we don't actually want to do this, i think this is what's breaking
+      .filter(p => p.player/* && p.pos*/)// <-- we don't actually want to do this, i think this is what's breaking
       // turn the position into a [x, y, z] number array (last 3 items in the array)
       .map(p => ({
         player: p.player,
