@@ -15,7 +15,7 @@ module.exports = class VoicePlugin {
     this.store = store;
 
     this.players = [];
-    this.lastKnownPlayerPositions = {};
+    this.lastKnown = {};
   }
 
   randomCode(length) {
@@ -26,7 +26,7 @@ module.exports = class VoicePlugin {
   }
 
   async getAllPlayerPositions() {
-    const pawnRegExp = /(?<index>\d+)\) BP_PlayerController_C .+?PersistentLevel\.(?<controller>BP_PlayerController_C_\d+)\.Pawn = (?:BP_FigureV2_C'.+?:PersistentLevel.(?<pawn>BP_FigureV2_C_\d+))?'$/;
+    const pawnRegExp = /(?<index>\d+)\) BP_PlayerController_C .+?PersistentLevel\.(?<controller>BP_PlayerController_C_\d+)\.Pawn = (?:None|BP_FigureV2_C'.+?:PersistentLevel.(?<pawn>BP_FigureV2_C_\d+)')?$/;
     const posRegExp = /(?<index>\d+)\) CapsuleComponent .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.CollisionCylinder\.RelativeLocation = \(X=(?<x>[\d.-]+),Y=(?<y>[\d.-]+),Z=(?<z>[\d.-]+)\)$/;
     const deadFigureRegExp = /(?<index>\d+)\) BP_FigureV2_C .+?PersistentLevel\.(?<pawn>BP_FigureV2_C_\d+)\.bIsDead = (?<dead>(True|False))$/;
 
@@ -85,26 +85,13 @@ module.exports = class VoicePlugin {
     for (const plr of players) {
       let transform = transformData[0].find(t => t.player.controller == plr.controller);
 
-      if (transform) {
-        if (!this.lastKnownPlayerPositions[plr.controller])
-          this.lastKnownPlayerPositions[plr.controller] = {unknownCount: 0};
-
-        const last = this.lastKnownPlayerPositions[plr.controller];
-
-        if (transform.pos) last.pos = transform.pos;
-        last.pawn = transform.pawn;
-        last.isDead = transform.isDead;
-        last.unknownCount = 0;
-
+      if (transform.pos) {
+        this.lastKnown[plr.controller] = transform.pos;
       } else {
-        const last = this.lastKnownPlayerPositions[plr.controller];
-        if (!last) continue;
-
-        last.unknownCount++;
-        transform = {player: plr, pos: last.pos, pawn: last.pawn, isDead: last.unknownCount > 10 || last.isDead};
+        transform.pos = this.lastKnown[plr.controller];
       }
 
-      if (!transform || !transform.pos) continue;
+      if (!transform.pos) continue;
 
       let rot = transformData[1].find(r => r.groups.pawn == transform.pawn);
       if (rot)
@@ -242,7 +229,7 @@ module.exports = class VoicePlugin {
 
     // when a player leaves, clean them up and inform all other clients
     this.omegga.on("leave", async (player) => {
-      delete this.lastKnownPlayerPositions[player.controller];
+      delete this.lastKnown[player.controller];
 
       for (let i = this.players.length - 1; i >= 0; i--) {
         if (this.players[i].user == player.name) {
