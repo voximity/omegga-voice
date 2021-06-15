@@ -63,6 +63,11 @@
       "default": false,
       "type": "boolean"
     },
+    "teammates-on-minimap": {
+      "description": "Whether or not a player should see only their teammates on their minimap. The setting others-on-minimap must be off.",
+      "default": true,
+      "type": "boolean"
+    },
     "others-on-minimap": {
       "description": "Whether or not others should be visible on the minimap.",
       "default": true,

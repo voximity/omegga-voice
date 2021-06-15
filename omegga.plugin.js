@@ -58,6 +58,70 @@ module.exports = class VoicePlugin {
       }));
   }
 
+  async getMinigames() {
+    // patterns to match the console logs
+    const ruleNameRegExp = /^(?<index>\d+)\) BP_Ruleset_C (.+):PersistentLevel.(?<ruleset>BP_Ruleset_C_\d+)\.RulesetName = (?<name>.*)$/;
+    const ruleMembersRegExp = /^(?<index>\d+)\) BP_Ruleset_C (.+):PersistentLevel.(?<ruleset>BP_Ruleset_C_\d+)\.MemberStates =$/;
+    const teamNameRegExp = /^(?<index>\d+)\) BP_Team(_\w+)?_C (.+):PersistentLevel.(?<ruleset>BP_Ruleset_C_\d+)\.(?<team>BP_Team(_\w+)?_C_\d+)\.TeamName = (?<name>.*)$/;
+    const teamColorRegExp = /^(?<index>\d+)\) BP_Team(_\w+)?_C (.+):PersistentLevel.(?<ruleset>BP_Ruleset_C_\d+)\.(?<team>BP_Team(_\w+)?_C_\d+)\.TeamColor = \(B=(?<b>\d+),G=(?<g>\d+),R=(?<r>\d+),A=(?<a>\d+)\)$/;
+    const teamMembersRegExp = /^(?<index>\d+)\) BP_Team(_\w+)?_C (.+):PersistentLevel.(?<ruleset>BP_Ruleset_C_\d+)\.(?<team>BP_Team(_\w+)?_C_\d+)\.MemberStates =$/;
+    const playerStateRegExp = /^\t(?<index>\d+): BP_PlayerState_C'(.+):PersistentLevel\.(?<state>BP_PlayerState_C_\d+)'$/;
+    const ruleSessionRegExp = /^(?<index>\d+)\) BP_Ruleset_C (.+):PersistentLevel\.(?<ruleset>BP_Ruleset_C_\d+)\.bInSession = (?<insession>False|True)$/;
+
+    try {
+      // parse console output to get the minigame info
+      const [rulesets, ruleMembers, teamMembers, teamNames, teamColors] = await Promise.all([
+        this.omegga.watchLogChunk('GetAll BP_Ruleset_C RulesetName', ruleNameRegExp, {first: 'index'}),
+        this.omegga.watchLogArray('GetAll BP_Ruleset_C MemberStates', ruleMembersRegExp, playerStateRegExp),
+        this.omegga.watchLogArray('GetAll BP_Team_C MemberStates', teamMembersRegExp, playerStateRegExp),
+        this.omegga.watchLogChunk('GetAll BP_Team_C TeamName', teamNameRegExp, {first: 'index'}),
+        // team color in a5 is based on (B=255,G=255,R=255,A=255)
+        this.omegga.watchLogChunk('GetAll BP_Team_C TeamColor', teamColorRegExp, {first: 'index'}),
+        this.omegga.watchLogChunk('GetAll BP_Ruleset_C bInSession', ruleSessionRegExp, {first: 'index'})
+      ]);
+
+      // figure out what to do with the matched color results
+      const handleColor = match => {
+        // color index, return the colorset color
+        if (match.color)
+          return color.DEFAULT_COLORSET[Number(match)].slice();
+        else
+          return [match.r, match.g, match.b, match.a].map(Number);
+      };
+
+      // join the data into a big object
+      return rulesets.map(r => ({
+        name: r.groups.name,
+        ruleset: r.groups.ruleset,
+        inSession: r.groups.insession == 'True',
+
+        // get the players from the team members
+        members: (ruleMembers
+          .find(m => m.item.ruleset === r.groups.ruleset)).members // get the members from this ruleset
+          .map(m => this.getPlayer(m.state)), // get the players
+
+        // get the teams for this ruleset
+        teams: teamMembers
+          .filter(m => m.item.ruleset === r.groups.ruleset) // only get teams from this ruleset
+          .map(m => ({
+            // team name
+            name: _.get(teamNames.find(t => t.groups.team === m.item.team), 'groups.name'),
+            team: m.item.team,
+
+            // get the colors (different for a4 and a5)
+            color: handleColor(_.pick(teamColors.find(t => t.groups.team === m.item.team).groups,
+              ['r', 'g', 'b', 'a'])),
+
+            // get the players from the team
+            members: m.members.map(m => this.getPlayer(m.state)),
+          }))
+      }));
+    } catch (e) {
+      Omegga.error('error getting minigames', e);
+      return undefined;
+    }
+  }
+
   // thanks cake
   getTransforms() {
     // patterns to match console logs
@@ -79,10 +143,17 @@ module.exports = class VoicePlugin {
     const transforms = [];
 
     const transformData = await this.getTransforms();
-
     const players = this.omegga.getPlayers();
+    const minigames = await this.omegga.getMinigames();
 
     for (const plr of players) {
+      // find the minigame the player is in
+      let minigame = minigames.find(m => m.members.find(p => p.controller == plr.controller));
+
+      // if it's the global minigame, ignore it
+      if (minigame.name == "GLOBAL")
+        minigame = null;
+
       let transform = transformData[0].find(t => t.player.controller == plr.controller);
 
       if (transform.pos) {
@@ -102,7 +173,7 @@ module.exports = class VoicePlugin {
       const aplr = this.players.find(p => p.user == transform.player.name);
       const peerId = aplr?.peerId;
 
-      transforms.push({
+      const t = {
         name: plr.name,
         x: transform.pos[0],
         y: transform.pos[1],
@@ -110,7 +181,20 @@ module.exports = class VoicePlugin {
         yaw: rot,
         peerId,
         isDead: transform.isDead
-      });
+      };
+
+      if (minigame) {
+        // we're in a minigame
+        const team = minigame.teams.find(t => t.members.find(m => m.controller == plr.controller));
+
+        t.minigame = {
+          inSession: minigame.inSession,
+          team: team.team,
+          teamColor: team.color
+        };
+      }
+
+      transforms.push(t);
     }
 
     this.io.emit("transforms", transforms);
@@ -128,6 +212,7 @@ module.exports = class VoicePlugin {
       showChat: this.config["show-chat"],
       chatTTS: this.config["tts-chat"],
       othersOnMinimap: this.config["others-on-minimap"],
+      teammatesOnMinimap: this.config["teammates-on-minimap"],
       deadNonProximity: this.config["dead-non-proximity"]
     };
   }

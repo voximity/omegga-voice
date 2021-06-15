@@ -15,6 +15,7 @@ let useTTS = false;
 let showChat = true;
 let chatTTS = false;
 let othersOnMinimap = true;
+let teammatesOnMinimap = true;
 let deadNonProximity = true;
 
 function setNetConfig(config) {
@@ -29,6 +30,7 @@ function setNetConfig(config) {
   chatTTS = config.chatTTS;
   othersOnMinimap = config.othersOnMinimap;
   deadNonProximity = config.deadNonProximity;
+  teammatesOnMinimap = config.teammatesOnMinimap;
 }
 
 async function getUserMedia() {
@@ -289,8 +291,22 @@ socket.on("transforms", (transforms) => {
     const diffY = transform.y - myTransform.y;
     const pX = diffY * mapScale + 150;
     const pY = -diffX * mapScale + 150;
+    const isTeammate = transform.minigame && myTransform.minigame && transform.minigame.team == myTransform.minigame.team;
 
-    if ((othersOnMinimap || transform == myTransform) && !transform.isDead) {
+    if (
+      !transform.isDead && // don't show dead players
+      (othersOnMinimap || (teammatesOnMinimap && (isTeammate || transform.minigame == null))) || // show others IF othersOnMinimap, or show teammates IF is teammate and teammatesOnMinimap
+      transform == myTransform // always show ourselves
+    ) {
+
+      if (transform.minigame) {
+        ctx.fillStyle = `rgb(${transform.minigame.teamColor.slice(0, 3).join(", ")})`;
+        ctx.strokeStyle = `#ddd`;
+      } else {
+        ctx.fillStyle = `#ddd`;
+        ctx.strokeStyle = `#ddd`;
+      }
+      
       ctx.fillText(transform.name, pX, pY + 4);
 
       // draw their look vector
@@ -306,6 +322,13 @@ socket.on("transforms", (transforms) => {
     // if they have a peer id, set their sound accordingly
     if (transform.peerId && peerAudio) {
       const theta = Math.atan2(-diffX, diffY) - (myTransform.yaw * Math.PI / 180);
+
+      if (!deadVoice && deadNonProximity && !myTransform.isDead && transform.isDead && !myTransform.minigame?.inSession) {
+        // only when the minigame is not in session
+        peerAudio.leftGain.gain.value = 0.4;
+        peerAudio.rightGain.gain.value = 0.4;
+        continue;
+      }
 
       if (!deadVoice && deadNonProximity && transform.isDead && myTransform.isDead) {
         // voice on death is disabled
