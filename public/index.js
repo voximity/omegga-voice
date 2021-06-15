@@ -317,6 +317,14 @@ socket.on("transforms", (transforms) => {
         continue;
       }
 
+      if (!deadVoice && deadNonProximity && !transform.isDead && myTransform.isDead) {
+        // same as above, but the target is not dead but we are
+        // we want to hear them at a slightly lower volume
+        peerAudio.leftGain.gain.value = 0.4;
+        peerAudio.rightGain.gain.value = 0.4;
+        continue;
+      }
+
       if (!deadVoice && transform.isDead) {
         // this person is dead, don't transmit their voice
         peerAudio.leftGain.gain.value = 0;
