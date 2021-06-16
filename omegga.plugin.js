@@ -118,7 +118,7 @@ module.exports = class VoicePlugin {
           }))
       }));
     } catch (e) {
-      console.log(e);
+      //console.log(e);
       return undefined;
     }
   }
