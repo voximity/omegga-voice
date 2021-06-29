@@ -8,11 +8,6 @@ After installing, users can connect to your server by going to `https://<your ip
 
 Install with `omegga install gh:voximity/voice`.
 
-Navigate to the plugin directory (`cd plugins/omegga-voice`) and
-install the dependencies (`npm i`).
-
-All at once: `omegga install gh:voximity/voice && cd plugins/omegga-voice && npm i`
-
 ## Config
 
 By default, the port used is 7778. You will need to forward an extra port for

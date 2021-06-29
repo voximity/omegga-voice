@@ -90,13 +90,13 @@ socket.on("bye", () => {
 let canvas;
 let notoContainer;
 
-function addNoto(innerHTML, notoClass) {
+function addNoto(text, notoClass) {
   if (notoContainer == null) return;
 
   const noto = document.createElement("div");
   noto.classList.add("noto");
   if (notoClass) noto.classList.add(notoClass);
-  noto.innerHTML = innerHTML;
+  noto.innerText = text;
 
   notoContainer.prepend(noto);
 
