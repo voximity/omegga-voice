@@ -90,13 +90,18 @@ socket.on("bye", () => {
 let canvas;
 let notoContainer;
 
-function addNoto(text, notoClass) {
+function addNoto(parts, notoClass) {
   if (notoContainer == null) return;
 
   const noto = document.createElement("div");
   noto.classList.add("noto");
   if (notoClass) noto.classList.add(notoClass);
-  noto.innerText = text;
+
+  for (const part of parts) {
+    const elem = document.createElement(part.type || "span");
+    elem.innerText = part.text;
+    noto.appendChild(elem);
+  }
 
   notoContainer.prepend(noto);
 
@@ -129,7 +134,7 @@ socket.on("authenticated", async (user) => {
   document.getElementById("page-body").appendChild(container);
 
   // and add a notification.
-  addNoto("Connected to voice chat.");
+  addNoto([{text: "Connected to voice chat."}]);
   tts("connected to voice chat.");
 
   authed = true;
@@ -173,7 +178,7 @@ socket.on("peer join", async ({name, peerId}) => {
   if (peerId == peer.id) return;
 
   // add a noto
-  addNoto(`<b>${name}</b> joined the voice chat.`, "noto-yellow");
+  addNoto([{type: "b", text: name}, {text: " joined the voice chat."}], "noto-yellow");
   tts(`${name} joined the voice chat.`);
 
   console.log("calling " + name + " (peer ID " + peerId + ")");
@@ -194,7 +199,7 @@ socket.on("peer join", async ({name, peerId}) => {
 socket.on("peer leave", async ({name, peerId}) => {
   if (peers[peerId] == null) return;
 
-  addNoto(`<b>${name}</b> left the voice chat.`);
+  addNoto([{type: "b", text: name}, {text: " left the voice chat."}]);
   tts(`${name} left the voice chat.`);
 
   console.log("call closed with " + name);
@@ -206,7 +211,7 @@ socket.on("chat", async ({name, message}) => {
   if (!authed) return;
 
   if (showChat)
-    addNoto(`<b>${name}:</b> ${message}`);
+    addNoto([{type: "b", text: `${name}:`}, {text: ` ${message}`}]);
   
   if (chatTTS) {
     let rate = 1;
