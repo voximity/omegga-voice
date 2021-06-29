@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const http = require("http");
 const https = require("https");
@@ -274,7 +275,7 @@ module.exports = class VoicePlugin {
 
     // serve public folder
     this.web.use("/peerjs", this.peer);
-    this.web.use(express.static("plugins/omegga-voice/public"));
+    this.web.use(express.static(path.join(__dirname, "public")));
 
     // set up socket io
     this.io.on("connection", (socket) => {

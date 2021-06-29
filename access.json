@@ -1,1 +1,1 @@
-["https", "http", "fs"]
+["https", "http", "fs", "path"]
