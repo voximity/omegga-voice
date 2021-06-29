@@ -153,7 +153,7 @@ module.exports = class VoicePlugin {
       let minigame = minigames.find(m => m.members.find(p => p.controller == plr.controller));
 
       // if it's the global minigame, ignore it
-      if (minigame.name == "GLOBAL")
+      if (!minigame || minigame.name == "GLOBAL")
         minigame = null;
 
       let transform = transformData[0].find(t => t.player.controller == plr.controller);
@@ -311,7 +311,11 @@ module.exports = class VoicePlugin {
 
     // start sending transforms regularly
     this.transformInterval = setInterval(async () => {
-      await this.sendTransforms();
+      try {
+        await this.sendTransforms();
+      } catch (e) {
+        console.log("Error sending transforms: " + e);
+      }
     }, this.config["polling-rate"]);
 
     // when a player leaves, clean them up and inform all other clients
