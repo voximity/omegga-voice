@@ -50,13 +50,13 @@ module.exports = class VoicePlugin {
         pawn,
       }))
       // filter by only those who have both player. previously we filtered by position but this breaks for players without a pawn, instead it's preferable to pass null
-      .filter(p => p.player)
+      .filter(p => p.player != null)
       // turn the position into a [x, y, z] number array (last 3 items in the array)
       .map(p => ({
-        player: p.player,
-        pawn: p.pawn.groups.pawn || null,
-        pos: p.pos ? p.pos.slice(3).map(Number) : null,
-        isDead: p.isDead ? p.isDead.groups.dead === 'True' : true,
+        player: p?.player,
+        pawn: p?.pawn?.groups?.pawn || null,
+        pos: p?.pos ? p.pos.slice(3).map(Number) : null,
+        isDead: p?.isDead ? p.isDead.groups.dead === 'True' : true,
       }));
   }
 
@@ -150,7 +150,7 @@ module.exports = class VoicePlugin {
 
     for (const plr of players) {
       // find the minigame the player is in
-      let minigame = minigames.find(m => m.members.find(p => p.controller == plr.controller));
+      let minigame = minigames.find(m => m.members && m.members.find(p => p.controller == plr.controller));
 
       // if it's the global minigame, ignore it
       if (!minigame || minigame.name == "GLOBAL")
@@ -314,7 +314,7 @@ module.exports = class VoicePlugin {
       try {
         await this.sendTransforms();
       } catch (e) {
-        console.log("Error sending transforms: " + e);
+        // console.log("Error sending transforms: " + e);
       }
     }, this.config["polling-rate"]);
 
@@ -326,6 +326,9 @@ module.exports = class VoicePlugin {
         if (this.players[i].user == player.name) {
           this.omegga.broadcast(`<color="ff0"><b>${player.name}</></> left the voice chat.`);
           this.players[i].socket.emit("bye");
+          this.players[i].socket.disconnect(true);
+          this.players[i].socket.removeAllListeners();
+          this.players[i].socket = null;
           this.io.emit("peer leave", {name: player.name, peerId: this.players[i].peerId});
           this.players.splice(i, 1);
         }
